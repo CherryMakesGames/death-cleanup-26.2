@@ -1,7 +1,7 @@
 package com.cherrymakesgames.deathcleanup.event;
 
 import com.cherrymakesgames.deathcleanup.data.DeathRecord;
-import com.cherrymakesgames.deathcleanup.data.DeathSavedData;
+import com.cherrymakesgames.deathcleanup.service.DeathSynchronizationService;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -10,17 +10,17 @@ public final class PlayerDeathEvents {
     private PlayerDeathEvents() {
     }
 
-    public static void register() {
+    public static void register(DeathSynchronizationService deaths) {
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
             if (!(entity instanceof ServerPlayer player)) {
                 return;
             }
 
-            recordDeath(player);
+            recordDeath(player, deaths);
         });
     }
 
-    private static void recordDeath(ServerPlayer player) {
+    private static void recordDeath(ServerPlayer player, DeathSynchronizationService deaths) {
         ServerLevel level = player.level();
         DeathRecord death = new DeathRecord(
                 player.getUUID(),
@@ -32,6 +32,6 @@ public final class PlayerDeathEvents {
                 System.currentTimeMillis()
         );
 
-        DeathSavedData.get(level.getServer()).upsert(death);
+        deaths.recordDeath(level.getServer(), death);
     }
 }
